@@ -33,14 +33,13 @@ def H(input_bytes):
 
 def ascii_printable(x):
     '''Adds the constraints to have an ascii printable byte'''
-    return And(0x20 <= (x & 0xff), (x & 0xff) <= 0x7f)
+    return And(0x20 <= x, x <= 0x7f)
 
 def generate_ascii_printable_string(base_name, size, solver):
     '''Generates a sequence of byte you can use as something to simulate C strings,
     and also adds to the solver the required constraints to have an ascii printable string'''
     bytes = [BitVec('%s%d' % (base_name, i), 8) for i in range(size)]
-    for byte in bytes:
-        solver.add(ascii_printable(byte))
+    solver.add(And(map(ascii_printable, bytes)))
     return bytes
 
 def str_to_BitVecVals8(s):
