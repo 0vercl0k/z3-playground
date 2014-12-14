@@ -22,7 +22,7 @@
 import sys
 import urllib2
 import operator
-import BeautifulSoup
+import bs4
 from z3 import *
 
 def get_the_grid_of_the_day():
@@ -30,7 +30,7 @@ def get_the_grid_of_the_day():
     data = urllib2.urlopen('http://www.mojette.net/').read()
     bins = map(
         lambda bin: int(bin['value'], 10),
-        BeautifulSoup.BeautifulSoup(data).findAll(
+        bs4.BeautifulSoup(data).findAll(
             'input',
             {
                 'type' : 'text',
