@@ -23,7 +23,6 @@
 import sys
 from z3 import *
 import string
-import sys
 import hashlib
 
 def checksum(flag, sum_):
