@@ -7,7 +7,7 @@ from z3 import *
 import sys
 
 def min_dom_set(graph):
-    """Try to color graph with the least color possible"""
+    """Try to dominate the graph with the least number of verticies possible"""
     s = Optimize()
     nodes_colors = dict((node_name, Int('k%r' % node_name)) for node_name in graph.nodes())
     for node in graph.nodes():
@@ -84,7 +84,7 @@ def main(argc, argv):
 
         print 'Saving it in the current directory with the layout %s..' % repr(layout)
         G.layout(layout)
-        G.draw('./min_dom_set_z3_%s_colored.png' % name)
+        G.draw('./min_dom_set_z3_%s_dominated.png' % name)
         print '---'
     return 1
 
