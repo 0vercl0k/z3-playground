@@ -33,6 +33,15 @@
 import sys
 from z3 import *
 
+add_gadgets_values = [
+    0xC9F4458B,
+    0xDEADBEEF,
+    0x0FCF,
+    0x13B2,
+    0x1337,
+    0x42
+]
+
 def ascii_printable(x):
     return And(0x20 <= (x & 0xff), (x & 0xff) <= 0x7f)
 
@@ -42,18 +51,50 @@ def linear_combination(x, y):
         tmp = tmp + (x[i] * y[i])
     return tmp
 
-def main(argc, argv):
+def display(model, magic, gadgets):
+    print 'Here is the optimal solution:'
+    print '\t1. So, initialize EAX to the following value: %#.8x' % model[magic].as_long()
+    n = 2
+
+    for i in range(len(gadgets)):
+        times = model[gadgets[i]].as_long()
+        if times > 0:
+            print '\t%d. Then, use the "ADD EAX, %#.8x" gadget %d times' % (
+                n,
+                add_gadgets_values[i],
+                times
+            )
+            n += 1
+
+def Optimize_version(target_value):
+    '''This version leverages the new optimization features provided by Z3Opt in >=Z3-441'''
+    s = Optimize()
+    magic = BitVec('magic', 32)
+    gadgets = [BitVec('gadget%d' % i, 32) for i in range(len(add_gadgets_values))]
+
+    # As I said, the EAX init must be a value with all bytes ASCII printable
+    for i in range(4):
+        s.add(ascii_printable((magic >> (i * 8))))
+
+    # Hinting the solver as it seems to take a whole lot longer otherwise :-|
+    for gadget in gadgets:
+        s.add(ULT(gadget, 100))
+
+    # Let's do our linear combination
+    s.add((magic + linear_combination(gadgets, add_gadgets_values)) == target_value)
+
+    # We want to minimize the result of the number of gadgets we use
+    s.minimize(Sum(gadgets))
+    # ..And we want to stay 0x1337.
+    s.maximize(gadgets[add_gadgets_values.index(0x1337)])
+
+    if s.check() == sat:
+        m = s.model()
+        display(m, magic, gadgets)
+
+def Exhaust_version(target_value):
     model_final = None
     smallest_sum = 0xffffffff
-
-    add_gadgets_values = [
-        0xC9F4458B,
-        0xDEADBEEF,
-        0x0FCF,
-        0x13B2,
-        0x1337,
-        0x42
-    ]
 
     while True:
         s = Solver()
@@ -68,9 +109,9 @@ def main(argc, argv):
             s.add(ULT(i, smallest_sum))
 
         # Let's do our linear combination
-        s.add((magic + linear_combination(gadgets, add_gadgets_values)) == 0xB00BDEAD)
+        s.add((magic + linear_combination(gadgets, add_gadgets_values)) == target_value)
 
-        s.add(ULT(sum(gadgets), smallest_sum))
+        s.add(ULT(Sum(gadgets), smallest_sum))
 
         if s.check() == sat:
             m = s.model()
@@ -83,19 +124,14 @@ def main(argc, argv):
             break
 
     assert(model_final != None)
-    print 'Here is the optimal solution:'
-    print '\t1. So, initialize EAX to the following value: %#.8x' % model_final[magic].as_long()
-    n = 2
+    display(model_final, magic, gadgets)
 
-    for i in range(len(gadgets)):
-        times = model_final[gadgets[i]].as_long()
-        if times > 0:
-            print '\t%d. Then, use the "ADD EAX, %#.8x" gadget %d times' % (
-                n,
-                add_gadgets_values[i],
-                times
-            )
-            n += 1
+def main(argc, argv):
+    target_value = 0xB00BDEAD
+    print 'Exhaust version'.center(80, '-')
+    Exhaust_version(target_value)
+    print 'Optimize version'.center(80, '-')
+    Optimize_version(target_value)
     return 1
 
 if __name__ == '__main__':
