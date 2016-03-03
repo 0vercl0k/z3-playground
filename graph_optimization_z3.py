@@ -45,6 +45,24 @@ def graph_coloring(graph):
 
     raise Exception('Could not find a solution.')
 
+#Contributed by @cbrewbs chad@dataculture.co
+#Requires z3 >= 4.4.1 
+def min_dom_set(graph):
+    """Try to dominate the graph with the least number of verticies possible"""
+    s = Optimize()
+    nodes_colors = dict((node_name, Int('k%r' % node_name)) for node_name in graph.nodes())
+    for node in graph.nodes():
+           s.add(And(nodes_colors[node] >= 0, nodes_colors[node] <= 1))
+           dom_neighbor = Sum ([ (nodes_colors[j]) for j in graph.neighbors(node) ])
+           s.add(Sum(nodes_colors[node], dom_neighbor ) >=1)
+    s.minimize( Sum([ nodes_colors[y] for y in graph.nodes()]) )
+
+    if s.check() == unsat:
+        raise Exception('Could not find a solution.')
+    else:
+        m = s.model()
+        return dict((name, m[color].as_long()) for name, color in nodes_colors.iteritems())
+
 def build_peternson_3_coloring_graph():
     """Build http://en.wikipedia.org/wiki/File:Petersen_graph_3-coloring.svg"""
     G = pgv.AGraph()
@@ -107,6 +125,36 @@ def main(argc, argv):
         G.layout(layout)
         G.draw('./graph_coloring_z3_%s_colored.png' % name)
         print '---'
+
+    for G, name, layout in Gs:
+        print 'Trying find min dom set for %s now (%d nodes, %d edges)..' % (repr(name), G.number_of_nodes(), G.number_of_edges())
+        t1 = time.time()
+        s = min_dom_set(G)
+        t2 = time.time()
+        print 'OK, found a solution with %d dominators' % sum( s.values())
+        print 'Here is the solution (in %ds):' % (t2 - t1)
+        if len(s) < 20:
+            print s
+        else:
+            print 'Too long, see the .png!'
+
+        print 'Setting the dominators to blue..'
+        color_available = [
+            'red',
+            'blue',
+            'green',
+            'pink'
+        ]
+
+        for node in G.nodes_iter():
+            n = G.get_node(node)
+            n.attr['color'] = color_available[s[node]]
+
+        print 'Saving it in the current directory with the layout %s..' % repr(layout)
+        G.layout(layout)
+        G.draw('./graph_z3_%s_dominatied.png' % name)
+        print '---'
+
     return 1
 
 if __name__ == '__main__':
