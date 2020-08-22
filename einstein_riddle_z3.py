@@ -19,6 +19,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from __future__ import print_function
 import sys
 from z3 import *
 
@@ -111,9 +112,9 @@ def solve_einstein_stuff():
         Or
         (
             And(houses[0][nationality] == p['nationality'].index('Norwegian'), houses[1][color] == p['color'].index('Blue')),
-            And(houses[0][nationality] == p['nationality'].index('Norwegian'), Or(houses[0][color] == p['color'].index('Blue'), houses[2][color] == p['color'].index('Blue'))),
-            And(houses[0][nationality] == p['nationality'].index('Norwegian'), Or(houses[1][color] == p['color'].index('Blue'), houses[3][color] == p['color'].index('Blue'))),
-            And(houses[0][nationality] == p['nationality'].index('Norwegian'), Or(houses[2][color] == p['color'].index('Blue'), houses[4][color] == p['color'].index('Blue'))),
+            And(houses[1][nationality] == p['nationality'].index('Norwegian'), Or(houses[0][color] == p['color'].index('Blue'), houses[2][color] == p['color'].index('Blue'))),
+            And(houses[2][nationality] == p['nationality'].index('Norwegian'), Or(houses[1][color] == p['color'].index('Blue'), houses[3][color] == p['color'].index('Blue'))),
+            And(houses[3][nationality] == p['nationality'].index('Norwegian'), Or(houses[2][color] == p['color'].index('Blue'), houses[4][color] == p['color'].index('Blue'))),
             And(houses[4][nationality] == p['nationality'].index('Norwegian'), houses[3][color] == p['color'].index('Blue'))
         )
     )
@@ -137,12 +138,12 @@ def solve_einstein_stuff():
     solution = [[m[case].as_long() for case in line] for line in houses]
 
     for i in range(5):
-        print 'Color: %s, Nationality: %s, Beverage: %s, Smoke: %s, Pet: %s' % (
+        print('Color: %s, Nationality: %s, Beverage: %s, Smoke: %s, Pet: %s' % (
             p['color'][solution[i][color]],
             p['nationality'][solution[i][nationality]],
             p['beverage'][solution[i][beverage]],
             p['smoke'][solution[i][smoke]],
-            p['pet'][solution[i][pet]]
+            p['pet'][solution[i][pet]])
         )
 
 def main(argc, argv):
